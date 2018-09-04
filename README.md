@@ -7,7 +7,7 @@ From within the OverOps user interface:
 
 1. Turn statsd on from publish metrics. (Settings -> Publish Metrics)
 
-2. Define the statsD server address as :8125
+2. Define the statsD server address as `<splunk-server-name-here>:8125`
 (this reflects a Splunk UDP data input on port 8125)
 
 3. The OverOps metrics should be defined as the following:
