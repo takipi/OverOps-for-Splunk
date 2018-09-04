@@ -12,13 +12,13 @@ From within the OverOps user interface:
 
 3. The OverOps metrics should be defined as the following:
 
-overops_views,${viewname},${serviceid},${application},${server},${deployment}
+`overops_views,${viewname},${serviceid},${application},${server},${deployment}`
 
-overops_events,${serviceid},${application},${server},${deployment},${class},${method},${eventlink},${eventid},${labels},${eventtype},${eventname},${introducedby},${entrypointclass},${entrypointmethod},${firstseen},${infra},${jiraissuekey}
+`overops_events,${serviceid},${application},${server},${deployment},${class},${method},${eventlink},${eventid},${labels},${eventtype},${eventname},${introducedby},${entrypointclass},${entrypointmethod},${firstseen},${infra},${jiraissuekey}`
 
-overops_entrypoints,${serviceid},${application},${server},${deployment},${entrypointclass},${entrypointmetrics}
+`overops_entrypoints,${serviceid},${application},${server},${deployment},${entrypointclass},${entrypointmetrics}`
 
-overops_jvms,${serviceid},${application},${server},${applicationpid}
+`overops_jvms,${serviceid},${application},${server},${applicationpid}`
 
 From within Splunk:
 
