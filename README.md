@@ -1,6 +1,6 @@
 # OverOps-for-Splunk
 OverOps for Splunk application
-![alt text](screenshots/rt-app-state.png "Real-Time Application State Dashboard")
+![alt text](rt-app-state.png "Real-Time Application State Dashboard")
 
 Installation procedure for the Splunk app:
 
