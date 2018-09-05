@@ -30,7 +30,9 @@ overops_jvms,${serviceid},${application},${server},${applicationpid}
 
 
 ### Perform these tasks from within Splunk:
-Note this app creates a new index called **overops**. A new UDP data input is also created on port 8125, **UDP:8125**.
+
+**Note this app creates a new index called _overops_. A new UDP data input is also created on port 8125, _UDP:8125_.**
+
 
 1. Save the Splunk overops app locally ( overops.spl )
 
