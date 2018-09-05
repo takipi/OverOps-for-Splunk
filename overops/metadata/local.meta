@@ -7,8 +7,11 @@ version = 7.1.2
 modtime = 1534878354.734938000
 
 [nav/default]
+access = read : [ * ], write : [ admin, power ]
+export = none
+owner = nobody
 version = 7.1.2
-modtime = 1534989741.522553000
+modtime = 1536161870.350750000
 
 [views/realtime_application_state]
 access = read : [ * ], write : [ admin ]
