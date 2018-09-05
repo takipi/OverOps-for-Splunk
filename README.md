@@ -1,14 +1,14 @@
-# OverOps-for-Splunk
-OverOps for Splunk application
+# OverOps for Splunk Application
 
 OverOps can provide net new machine data beyond log files, that will help to enhance and extend your Splunk implementation.  While log files provide some value, OverOps collects unique data at the moment of application execution that gives complete insight into an error or an exception.  And this granular information has proven to be extremely useful inside of Splunk.
 
 With real-time streaming of events & metrics from OverOps directly into Splunk, SREs, DevOps and IT Ops can gain clarity of overall application health as visualized in Splunk Metric Dashboards through key performance indicators, such as the number of unique uncaught and swallowed exceptions, and errors that are new or have resurfaced.  You can’t find those in log files, but now you can with OverOps data inside of Splunk!
+#### Real-Time Application State
 ![alt text](screenshots/rt-app-state.png "Real-Time Application State Dashboard")
 
-Installation procedure for the Splunk app:
+## Installation procedure for the Splunk app:
 
-From within the OverOps user interface:
+### From within the OverOps user interface:
 
 1. Turn statsd on from publish metrics. (Settings -> Publish Metrics)
 
@@ -29,7 +29,7 @@ overops_jvms,${serviceid},${application},${server},${applicationpid}
 ![alt text](screenshots/publish-metrics.png "Publish Metrics")
 
 
-From within Splunk:
+### From within Splunk:
 
 1. Save the Splunk overops app locally ( overops.spl )
 
@@ -44,16 +44,21 @@ Edit dashboards -> More details -> Edit Drilldown -> Link to custom URL
 
 Please be aware that some visuals in the Real-Time Application State dashboard will take a couple days to populate as there are some day over day comparisons, hence the index will need to be filled with the appropriate data.
 
-More sample screenshots below:
+### More sample screenshots below:
 
+#### Continuous Reliability
 For SREs and QA Engineers, identify what builds and deployments have introduced new errors into your code, so you can make informed decisions on when to promote code from environment to environment.
 ![alt text](screenshots/continuous-reliability.png "Continuous Reliability Dashboard")
 
+#### Application Drill-down
 For the VP of Engineering and Development Leads in your organization, access OverOps data inside Splunk to aggregate specific code locations where errors and exceptions are most prevalent in your code base, and correlate error volumes to application throughput for error rate analysis.
 ![alt text](screenshots/app-drilldown.png "Application Drill-down Dashboard")
+
+#### Exception Analysis / Log Error & Warning Analysis
 ![alt text](screenshots/exception-analysis.png "Exception Analysis Dashboard")
 ![alt text](screenshots/log-error-warn-analysis.png "Log Error & Warning Analysis Dashboard")
 
+#### Event Details
 Help Development Leads cut through the noise as OverOps can deduplicate billions of logged events into accurate analytics inside Splunk, without the need to parse and search through text.
 ![alt text](screenshots/event-details.png "Event Details Dashboard")
 
