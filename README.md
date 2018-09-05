@@ -1,6 +1,6 @@
 # OverOps-for-Splunk
 OverOps for Splunk application
-![alt text](rt-app-state.png "Real-Time Application State Dashboard")
+![alt text](screenshots/rt-app-state.png "Real-Time Application State Dashboard")
 
 Installation procedure for the Splunk app:
 
@@ -39,8 +39,8 @@ Edit dashboards -> More details -> Edit Drilldown -> Link to custom URL
 Please be aware that some visuals in the Real-Time Application State dashboard will take a couple days to populate as there are some day over day comparisons, hence the index will need to be filled with the appropriate data.
 
 More sample screenshots below:
-![alt text](continuous-reliability.png "Continuous Reliability Dashboard")
-![alt text](app-drilldown.png "Application Drill-down Dashboard")
-![alt text](event-details.png "Event Details Dashboard")
-![alt text](exception-analysis.png "Exception Analysis Dashboard")
-![alt text](log-error-warn-analysis.png "Log Error & Warning Analysis Dashboard")
+![alt text](screenshots/continuous-reliability.png "Continuous Reliability Dashboard")
+![alt text](screenshots/app-drilldown.png "Application Drill-down Dashboard")
+![alt text](screenshots/event-details.png "Event Details Dashboard")
+![alt text](screenshots/exception-analysis.png "Exception Analysis Dashboard")
+![alt text](screenshots/log-error-warn-analysis.png "Log Error & Warning Analysis Dashboard")
