@@ -8,7 +8,7 @@ With real-time streaming of events & metrics from OverOps directly into Splunk, 
 
 ## Installation procedure for the Splunk app:
 
-### From within the OverOps user interface:
+### Perform these tasks from within the OverOps user interface:
 
 1. Turn statsd on from publish metrics. (Settings -> Publish Metrics)
 
@@ -29,7 +29,7 @@ overops_jvms,${serviceid},${application},${server},${applicationpid}
 ![alt text](screenshots/publish-metrics.png "Publish Metrics")
 
 
-### From within Splunk:
+### Perform these tasks from within Splunk:
 
 1. Save the Splunk overops app locally ( overops.spl )
 
