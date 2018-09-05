@@ -1,0 +1,261 @@
+<form hideFilters="true">
+  <label>Continuous Reliability</label>
+  <init>
+    <set token="build">v4-0-483</set>
+  </init>
+  <description>For SRE, QA Engineer to evaluate code quality by build.</description>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="time">
+      <label>Select a Time Range</label>
+      <choice value="-4h">Last 4 Hours</choice>
+      <choice value="-12h">Last 12 Hours</choice>
+      <choice value="-24h">Last 24 Hours</choice>
+      <choice value="-2d">Last 2 Days</choice>
+      <choice value="-7d">Last 7 Days</choice>
+      <choice value="-14d">Last 14 Days</choice>
+      <choice value="-30d">Last 30 Days</choice>
+      <default>-24h</default>
+      <initialValue>-24h</initialValue>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="Last 4 Hours">
+          <set token="span">30m</set>
+          <set token="trend">4h</set>
+          <set token="spark">-40h</set>
+          <set token="range_label">Last 4 Hours</set>
+        </condition>
+        <condition label="Last 12 Hours">
+          <set token="span">1h</set>
+          <set token="trend">12h</set>
+          <set token="spark">-120h</set>
+          <set token="range_label">Last 4 Hours</set>
+        </condition>
+        <condition label="Last 24 Hours">
+          <set token="span">1h</set>
+          <set token="trend">24h</set>
+          <set token="spark">-10d</set>
+          <set token="range_label">Today</set>
+        </condition>
+        <condition label="Last 2 Days">
+          <set token="span">2h</set>
+          <set token="trend">48h</set>
+          <set token="spark">-480h</set>
+          <set token="range_label">Last 2 Days</set>
+        </condition>
+        <condition label="Last 7 Days">
+          <set token="span">1d</set>
+          <set token="trend">7d</set>
+          <set token="spark">-4w</set>
+          <set token="range_label">This Week</set>
+        </condition>
+        <condition label="Last 14 Days">
+          <set token="span">1d</set>
+          <set token="trend">14d</set>
+          <set token="spark">-30d</set>
+          <set token="range_label">Last 2 Weeks</set>
+        </condition>
+        <condition label="Last 30 Days">
+          <set token="span">1w</set>
+          <set token="trend">30d</set>
+          <set token="spark">-90d</set>
+          <set token="range_label">Last 30 Days</set>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="build">
+      <label>Build</label>
+      <fieldForLabel>introducedby</fieldForLabel>
+      <fieldForValue>introducedby</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* introducedby!="version*" introducedby!="stage*" | dedup introducedby | sort -introducedby</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>New Unique Errors Introduced by $build$</title>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* introducedby!="stage*" introducedby!="version*" introducedby=$build$ event_type!=caught_exception | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[10,40,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>New Total Events Introduced by $build$</title>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* introducedby=$build$ event_type!=caught_exception | stats sum(value) | append [| stats count as event_count]</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trellis.splitBy">_aggregation</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>New Errors Introduced by Last 10 Deployments</title>
+      <chart>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type!=caught_exception | rename "introducedby" AS "introducedby" | search introducedby!="version*" | search introducedby!="stage*" | stats distinct_count(eventid) as "Event Count" sum(value) as Volume by introducedby  |tail 10 | sort +str(introducedby)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <drilldown>
+          <set token="build">$click.value$</set>
+          <set token="color">0x8c8910</set>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel>
+      <title>Reliability over Time - Volume over Last 7 Days</title>
+      <chart>
+        <search>
+          <query>index=overops metric=overops_events  NOT labels=*Resolved* service=* event_type != caught_exception event_type != timer | timechart sum(value) span=1d by event_type | union [search index=overops metric=overops_entrypoints service=*  entrypoint_metrics=entry_point_total_calls | timechart span=1d sum(value) as Throughput]</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.overlayFields">Throughput</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.fieldDashStyles">{"Throughput":"dash"}</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>All Events Introduced by $build$</title>
+      <table>
+        <title>Click any event below to see root cause</title>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* introducedby IN ($build$) event_type!=caught_exception  |stats sum(value) as Times by eventid, event_type, class, method, eventname, link, entrypoint_class, entrypoint_method  |rename event_type as "Event Type" |rename eventname as Type |rename link as "RootCause" | strcat class "." method codelocation |rename codelocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" |rename eventid as "Event ID" | table "Event ID", "Event Type", "Code Location", Type, "RootCause", "Entry Point", Times | sort -Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- Use the fields option to list the result feilds to explicitly display -->
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Times">
+          <option name="precision">0</option>
+        </format>
+        <fields>["Event Type","Code Location","Entry Point", "Times"]</fields>
+        <drilldown>
+          <link target="_blank">https://app.overops-samples.com/tinykey/$row.RootCause|n$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>

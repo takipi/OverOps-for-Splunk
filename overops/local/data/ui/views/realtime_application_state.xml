@@ -1,0 +1,803 @@
+<form hideFilters="true">
+  <label>Real-Time Application State</label>
+  <description>For SRE, DevOps, IT Ops to evaluate application health.</description>
+  <init>
+    <set token="application">*</set>
+    <set token="server">*</set>
+    <set token="event_type">*</set>
+    <set token="resurfaced">*</set>
+    <set token="environment">*</set>
+  </init>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="time">
+      <label>Select a Time Range</label>
+      <choice value="-4h">Last 4 Hours</choice>
+      <choice value="-12h">Last 12 Hours</choice>
+      <choice value="-24h">Last 24 Hours</choice>
+      <choice value="-2d">Last 2 Days</choice>
+      <choice value="-7d">Last 7 Days</choice>
+      <choice value="-14d">Last 14 Days</choice>
+      <choice value="-30d">Last 30 Days</choice>
+      <default>-24h</default>
+      <initialValue>-24h</initialValue>
+      <!-- set condition based on the label defined by <choice> -->
+      <!-- Within each condition, specify a custom label for display -->
+      <!-- Capture the selected value in the token, earliest_tok -->
+      <change>
+        <condition label="Last 4 Hours">
+          <set token="span">30m</set>
+          <set token="trend">4h</set>
+          <set token="spark">-16h</set>
+          <set token="range_label">Last 4 Hours</set>
+        </condition>
+        <condition label="Last 12 Hours">
+          <set token="span">1h</set>
+          <set token="trend">12h</set>
+          <set token="spark">-120h</set>
+          <set token="range_label">Last 4 Hours</set>
+        </condition>
+        <condition label="Last 24 Hours">
+          <set token="span">1h</set>
+          <set token="trend">24h</set>
+          <set token="spark">-7d</set>
+          <set token="range_label">Last 24 Hours</set>
+        </condition>
+        <condition label="Last 2 Days">
+          <set token="span">2h</set>
+          <set token="trend">48h</set>
+          <set token="spark">-336h</set>
+          <set token="range_label">Last 2 Days</set>
+        </condition>
+        <condition label="Last 7 Days">
+          <set token="span">1d</set>
+          <set token="trend">7d</set>
+          <set token="spark">-4w</set>
+          <set token="range_label">This Week</set>
+        </condition>
+        <condition label="Last 14 Days">
+          <set token="span">1d</set>
+          <set token="trend">14d</set>
+          <set token="spark">-30d</set>
+          <set token="range_label">Last 2 Weeks</set>
+        </condition>
+        <condition label="Last 30 Days">
+          <set token="span">1w</set>
+          <set token="trend">30d</set>
+          <set token="spark">-90d</set>
+          <set token="range_label">Last 30 Days</set>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="environment">
+      <label>Environment</label>
+      <fieldForLabel>service</fieldForLabel>
+      <fieldForValue>service</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Environments</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="checkbox" token="application">
+      <label>Application</label>
+      <default>prod-sqs8,prod-api1,prod-app2,prod-app4,prod-sqs4,prod-sqs7</default>
+      <initialValue>prod-sqs8,prod-sqs7,prod-sqs4,prod-app4,prod-app2,prod-api1</initialValue>
+      <fieldForLabel>application</fieldForLabel>
+      <fieldForValue>application</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | dedup application | sort +application</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter> , </delimiter>
+    </input>
+    <input type="checkbox" token="server">
+      <label>Server</label>
+      <default>ip-10-238-54-161,ip-10-233-123-230,ip-10-228-106-172,ip-10-225-180-121,ip-10-181-20-119,ip-10-168-83-132</default>
+      <initialValue>ip-10-168-83-132,ip-10-181-20-119,ip-10-225-180-121,ip-10-228-106-172,ip-10-233-123-230,ip-10-238-54-161</initialValue>
+      <fieldForLabel>server</fieldForLabel>
+      <fieldForValue>server</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | dedup server | sort +server</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter> , </delimiter>
+    </input>
+    <input type="checkbox" token="event_type">
+      <label>Event Type</label>
+      <fieldForLabel>event_type</fieldForLabel>
+      <fieldForValue>event_type</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* event_type!=caught_exception | dedup event_type | sort +event_type</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter>, </delimiter>
+    </input>
+    <input type="radio" token="resurfaced" searchWhenChanged="false">
+      <label>Resurfaced?</label>
+      <choice value="*resurfaced*">Yes</choice>
+      <choice value="*">No</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>index=overops metric=overops_jvms earliest=$time$ service=$environment$ | stats distinct_count(application) as JVMs distinct_count(server) as Servers | strcat "OverOps is connected to " JVMs " JVMs on " Servers " servers" string |rename string as "OverOps is Active" | table "OverOps is Active"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>30s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">none</option>
+        <format type="number" field="JVMs">
+          <option name="precision">0</option>
+          <option name="unit">JVMs Monitored on</option>
+        </format>
+        <format type="number" field="Collectors">
+          <option name="precision">0</option>
+          <option name="unit">Collectors</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y %H:%M:%S") | where firstseen_10 &gt;= n | stats dc(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0xdc4e41"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">New $range_label$</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=uncaught_exception earliest=$time$  | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0xdc4e41"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Uncaught Exceptions</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="event_type">uncaught_exception</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">Uncaught Exceptions</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_error  earliest=$time$ | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x006d9c","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[5,10,15,20]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Log Errors</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="event_type">log_error</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">Log Errors</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=http_error earliest=$time$ | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x006d9c","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,2,5,15]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">HTTP Errors</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="event_type">http_error</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">HTTP Errors</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=swallowed_exception earliest=$time$ | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x006d9c","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[3,6,9,12]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Swallowed Exceptions</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="event_type">swallowed_exception</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">Swallowed Exceptions</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_warning earliest=$time$ | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x006d9c","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[10,30,50,70]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Log Warnings</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="event_type">log_warning</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">Log Warnings</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events service=$environment$ label=*resurfaced* earliest=$time$| stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x006d9c","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,5,10,15]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Resurfaced</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="resurfaced">*resurfaced*</set>
+          <set token="event_type">*</set>
+          <set token="classification">Resurfaced Errors</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=timer earliest=$time$ | stats distinct_count(eventid)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[10,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">Timers</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <set token="event_type">timer</set>
+          <set token="resurfaced">*</set>
+          <set token="classification">Timer</set>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") | where firstseen_10 &gt;= n | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="underLabel">Times</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=uncaught_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">auto</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=Uncaught Exceptions&amp;type=uncaught_exception&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_error earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=Logged Errors&amp;type=log_error&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=http_error  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=HTTP Errors&amp;type=http_error&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=swallowed_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">auto</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?type=swallowed_exception&amp;title=Swallowed Exception&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_warning earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=Logged Warnings&amp;type=log_warning&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events label=*resurfaced* service=$environment$  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">115</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="underLabel">times</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=Resurfaced Errors&amp;type=*&amp;resurfaced=*resurfaced*</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=timer earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="underLabel">times</option>
+        <option name="useColors">1</option>
+        <drilldown>
+          <link target="_blank">/app/overops/error_details?title=Timers&amp;type=timer&amp;resurfaced=*</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Events by Tier vs Throughput</title>
+      <chart>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ infra!=null service=$environment$ event_type!=caught_exception event_type IN ($event_type$) application IN ($application$) server IN ($server$) labels=$resurfaced$ earliest=$time$ | timechart span=1h sum(value) as Times by infra | join _time [search index=overops metric=overops_entrypoints earliest=$time$ service=*  application IN (*) server IN (*) entrypoint_metrics=entry_point_total_calls | timechart span=$span$ sum(value) as Throughput]</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">auto</option>
+        <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.overlayFields">Throughput</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldDashStyles">{"Throughput":"dash"}</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">378</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Events vs Predicted Volume</title>
+      <chart>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application IN ($application$) server IN ($server$) event_type IN ($event_type$) labels=$resurfaced$ event_type!=caught_exception | timechart span=$span$ sum(value) as Times | predict Times future_timespan=5 as "Predicted Volume"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">376</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Application View ( click any application to see more )</title>
+      <table>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ earliest=-24h latest=now | rename value as today | stats sum(today) as Times sparkline(sum(today),1h) as "24h Trend" distinct_count(eventid) as "Unique Events" by application | join application [search index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) earliest=-48h latest=-24h |rename value as previous | stats sum(previous) as Previous  by application ] |eval percent_change=(Times-Previous)/Previous *100 | rename application as Application | rename percent_change as "Δ% 24h" | table Application, "Unique Events", Times, "Δ% 24h", "24h Trend" | sort -Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Times">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Times">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="number" field="% Change from Yesterday">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Δ% 24h">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+        <drilldown>
+          <link target="_blank">/app/overops/application_drilldowndrillthrough?application=$click.value$&amp;app_label=$click.value$</link>
+        </drilldown>
+      </table>
+    </panel>
+    <panel>
+      <title>Server View</title>
+      <table>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ earliest=-24h latest=now | rename value as today | stats sum(today) as Times sparkline(sum(today),1h) as "24h Trend" distinct_count(eventid) as "Unique Events" by server | join server [search index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) earliest=-48h latest=-24h |rename value as previous | stats sum(previous) as Previous  by server ] |eval percent_change=(Times-Previous)/Previous *100 | rename server as Server | rename percent_change as "Δ% 24h" | table Server, "Unique Events", Times, "Δ% 24h", "24h Trend" | sort -Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Times">
+          <option name="precision">0</option>
+        </format>
+        <format type="color" field="Times">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="number" field="% Change from Yesterday">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Δ% 24h">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Deployment View</title>
+      <table>
+        <search>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ earliest=-24h latest=now | rename value as today | stats sum(today) as Times distinct_count(eventid) as "Unique Events" distinct_count(application) as Applications distinct_count(server) as Servers by deployment | join deployment [search index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) earliest=-48h latest=-24h |rename value as previous | stats sum(previous) as Previous  by deployment ] |eval percent_change=(Times-Previous)/Previous *100 | rename deployment as Deployment | rename percent_change as "Δ% 24h" | Table Deployment, "Unique Events", Times, "Δ% 24h", Applications, Servers | sort -Times</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="Times">
+          <option name="precision">0</option>
+        </format>
+        <format type="number" field="% Change from Yesterday">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+        <format type="number" field="Δ% 24h">
+          <option name="precision">1</option>
+          <option name="unit">%</option>
+        </format>
+        <drilldown>
+          <link target="_blank">/app/overops/continuous_reliability</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+</form>
