@@ -97,7 +97,7 @@
       <title>Click any event below to see root cause</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type=$type$ labels=$resurfaced$  | stats sum(value) as Times by eventid, event_type, class, method, link | strcat class "." method eventlocation |rename eventlocation as "Code Location" | rename eventid as "Event ID" | rename link as "RootCause" | table "Event ID" "Code Location", Times, "RootCause" | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type=$type$ labels=$resurfaced$  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | strcat class "." method eventlocation |rename eventlocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" | rename eventid as "Event ID" | rename link as "RootCause" | table "Event ID" "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -118,7 +118,7 @@
           <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
           <scale type="minMidMax"></scale>
         </format>
-        <fields>["Event ID","Code Location","Times"]</fields>
+        <fields>["Event ID","Code Location","Entry Point", "Times"]</fields>
         <drilldown>
           <link target="_blank">https://app.overops-samples.com/tinykey/$row.RootCause|n$</link>
         </drilldown>
