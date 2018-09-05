@@ -26,6 +26,8 @@ overops_entrypoints,${serviceid},${application},${server},${deployment},${entryp
 
 overops_jvms,${serviceid},${application},${server},${applicationpid}
 ```
+![alt text](screenshots/publish-metrics.png "Publish Metrics")
+
 
 From within Splunk:
 
