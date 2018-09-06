@@ -1,7 +1,7 @@
 <form hideFilters="true">
   <label>Continuous Reliability</label>
   <init>
-    <set token="build">v4-0-483</set>
+    <set token="build">v0</set>
   </init>
   <description>For SRE, QA Engineer to evaluate code quality by build.</description>
   <fieldset submitButton="true" autoRun="true">
@@ -136,7 +136,7 @@
   </row>
   <row>
     <panel>
-      <title>New Errors Introduced by Last 10 Deployments</title>
+      <title>New Errors Introduced by Last 10 Deployments ( click deployment to see events )</title>
       <chart>
         <search>
           <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type!=caught_exception | rename "introducedby" AS "introducedby" | search introducedby!="version*" | search introducedby!="stage*" | stats distinct_count(eventid) as "Event Count" sum(value) as Volume by introducedby  |tail 10 | sort +str(introducedby)</query>
