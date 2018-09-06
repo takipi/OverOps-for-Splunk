@@ -30,7 +30,7 @@ overops_entrypoints,${serviceid},${application},${server},${deployment},${entryp
 
 overops_jvms,${serviceid},${application},${server},${applicationpid}
 
-overops_custom,${serviceid}.${application}.${server}.${deployment},${metric},${code}
+overops-metrics,${serviceid},${application},${server},${deployment},${metric}
 ```
 
 
