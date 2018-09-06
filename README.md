@@ -29,7 +29,11 @@ overops_events,${serviceid},${application},${server},${deployment},${class},${me
 overops_entrypoints,${serviceid},${application},${server},${deployment},${entrypointclass},${entrypointmetrics}
 
 overops_jvms,${serviceid},${application},${server},${applicationpid}
+
+overops_custom,${serviceid}.${application}.${server}.${deployment},${metric},${code}
 ```
+
+
 ![alt text](screenshots/publish-metrics.png "Publish Metrics")
 
 
