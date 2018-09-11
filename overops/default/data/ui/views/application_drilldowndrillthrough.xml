@@ -62,13 +62,26 @@
         </condition>
       </change>
     </input>
+    <input type="dropdown" token="environment">
+      <label>Environment</label>
+      <fieldForLabel>service</fieldForLabel>
+      <fieldForValue>service</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Environments</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
   </fieldset>
   <row>
     <panel>
       <title>Unique Errors by Application (click slices to filter by application)</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) | stats  distinct_count(eventid) as count by application</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) | stats  distinct_count(eventid) as count by application</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -117,7 +130,7 @@
       <chart>
         <title>$app_label$</title>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=*  event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) application=$application$ | join application [search index=overops metric=overops_entrypoints earliest=$time$ service=* entrypoint_metrics=entry_point_total_calls  application=$application$ |rename value as throughput ]| timechart span=$span$ sum(value) as Times sum(throughput) as Throughput | eval Rate=((Times/Throughput) *100)</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) application=$application$ | join application [search index=overops metric=overops_entrypoints earliest=$time$ service=$environment$ entrypoint_metrics=entry_point_total_calls application=$application$ |rename value as throughput ]| timechart span=$span$ sum(value) as Times sum(throughput) as Throughput | eval Rate=((Times/Throughput) *100)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -172,7 +185,7 @@
       <table depends="$showTable$">
         <title>Click any event below to see root cause</title>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error)  | rename application as Application  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | rename eventid as "Event ID" | rename link as "RootCause" | strcat class "." method eventlocation| strcat entrypoint_class "." entrypoint_method entrypoint |rename eventlocation as "Code Location" |rename entrypoint as "Entry Point" |rename event_type as "Event Type" | table "Event Type", "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error)  | rename application as Application  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | rename eventid as "Event ID" | rename link as "RootCause" | strcat class "." method eventlocation| strcat entrypoint_class "." entrypoint_method entrypoint |rename eventlocation as "Code Location" |rename entrypoint as "Entry Point" |rename event_type as "Event Type" | table "Event Type", "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -189,7 +202,7 @@
         <format type="number" field="Times">
           <option name="precision">0</option>
         </format>
-        <fields>["Event Type","Code Location","Entry Point", "Times"]</fields>
+        <fields>["Event Type","Code Location","Entry Point","Times"]</fields>
         <drilldown>
           <link target="_blank">https://app.overops-samples.com/tinykey/$row.RootCause|n$</link>
         </drilldown>

@@ -1,4 +1,4 @@
-<form>
+<form hideFilters="true">
   <label>Event Details</label>
   <fieldset submitButton="true" autoRun="true">
     <input type="dropdown" token="time">
@@ -46,13 +46,79 @@
         </condition>
       </change>
     </input>
+    <input type="dropdown" token="environment">
+      <label>Environment</label>
+      <fieldForLabel>service</fieldForLabel>
+      <fieldForValue>service</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Environments</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Environments">
+          <set token="env_label"></set>
+        </condition>
+        <condition>
+          <set token="env_label">Environment: $label$</set>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="application">
+      <label>Application</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>application</fieldForLabel>
+      <fieldForValue>application</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events  service=$environment$ | dedup application | sort +application</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Applications</choice>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Applications">
+          <set token="app_label"></set>
+        </condition>
+        <condition>
+          <set token="app_label">Application: $label$</set>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="server">
+      <label>Server</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>server</fieldForLabel>
+      <fieldForValue>server</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application= $application$ | dedup server | sort +server</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Servers</choice>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Servers">
+          <set token="serv_label"></set>
+        </condition>
+        <condition>
+          <set token="serv_label">Server: $label$</set>
+        </condition>
+      </change>
+    </input>
   </fieldset>
   <row>
     <panel>
       <title>$title$ $range_label$</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type=$type$ $resurfaced$ | timechart span=$span$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=$type$ $resurfaced$ | timechart span=$span$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -97,7 +163,7 @@
       <title>Click any event below to see root cause</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type=$type$ labels=$resurfaced$  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | strcat class "." method eventlocation |rename eventlocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" | rename eventid as "Event ID" | rename link as "RootCause" | table "Event ID" "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=$type$ labels=$resurfaced$  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | strcat class "." method eventlocation |rename eventlocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" | rename eventid as "Event ID" | rename link as "RootCause" | table "Event ID" "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -118,7 +184,7 @@
           <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
           <scale type="minMidMax"></scale>
         </format>
-        <fields>["Event ID","Code Location","Entry Point", "Times"]</fields>
+        <fields>["Event ID","Code Location","Entry Point","Times"]</fields>
         <drilldown>
           <link target="_blank">https://app.overops-samples.com/tinykey/$row.RootCause|n$</link>
         </drilldown>

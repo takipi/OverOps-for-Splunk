@@ -15,13 +15,52 @@
       <default>-24h</default>
       <initialValue>-24h</initialValue>
     </input>
+    <input type="dropdown" token="environment">
+      <label>Environment</label>
+      <fieldForLabel>service</fieldForLabel>
+      <fieldForValue>service</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Environments</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="dropdown" token="application">
+      <label>Application</label>
+      <choice value="*">All Applications</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>application</fieldForLabel>
+      <fieldForValue>application</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events service=$environment$ | dedup application | sort +application</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="server">
+      <label>Server</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>server</fieldForLabel>
+      <fieldForValue>server</fieldForValue>
+      <search>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application= $application$ | dedup server | sort +server</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <choice value="*">All Servers</choice>
+    </input>
   </fieldset>
   <row>
     <panel>
       <title>Top Log Errors</title>
       <chart>
         <search>
-          <query>index=overops overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type IN (log_error) |rename class as "Class" | stats sum(value) as Times distinct_count(eventid) as count by Class |sort -Class</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error |rename class as "Class" | stats sum(value) as Times distinct_count(eventid) as count by Class |sort -Class</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -64,7 +103,7 @@
       <title>Top Log Warnings</title>
       <chart>
         <search>
-          <query>index=overops overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type IN (log_warning) |rename class as Class | stats sum(value) as Times distinct_count(eventid) as count by Class | sort -Class</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning |rename class as Class | stats sum(value) as Times distinct_count(eventid) as count by Class | sort -Class</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -108,7 +147,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops overops_events earliest=$time$ NOT labels=*Resolved* service=* event_type =log_error | stats sum(value) as Times distinct_count(eventid) as count by class, method  | strcat class "." method eventlocation | rename eventlocation as "Code Location" | rename count as "Error Count" | Table "Code Location", "Error Count", Times | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error | stats sum(value) as Times distinct_count(eventid) as count by class, method  | strcat class "." method eventlocation | rename eventlocation as "Code Location" | rename count as "Error Count" | Table "Code Location", "Error Count", Times | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -117,6 +156,7 @@
         <option name="dataOverlayMode">heatmap</option>
         <option name="drilldown">none</option>
         <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">true</option>
         <option name="wrap">true</option>
@@ -131,7 +171,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops overops_events NOT earliest=$time$ NOT labels=*Resolved* service=* event_type =log_warning | stats sum(value) as Times distinct_count(eventid) as count by class, method  | strcat class "." method eventlocation | rename eventlocation as "Code Location" | rename count as "Error Count" | Table "Code Location", "Error Count", Times | sort -Times</query>
+          <query>index=overops metric=overops_events NOT earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning | stats sum(value) as Times distinct_count(eventid) as count by class, method  | strcat class "." method eventlocation | rename eventlocation as "Code Location" | rename count as "Error Count" | Table "Code Location", "Error Count", Times | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -140,6 +180,7 @@
         <option name="dataOverlayMode">heatmap</option>
         <option name="drilldown">none</option>
         <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">true</option>
         <option name="wrap">true</option>

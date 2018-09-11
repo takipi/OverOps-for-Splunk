@@ -2,11 +2,8 @@
   <label>Real-Time Application State</label>
   <description>For SRE, DevOps, IT Ops to evaluate application health.</description>
   <init>
-    <set token="application">*</set>
-    <set token="server">*</set>
     <set token="event_type">*</set>
     <set token="resurfaced">*</set>
-    <set token="environment">*</set>
   </init>
   <fieldset submitButton="true" autoRun="true">
     <input type="dropdown" token="time">
@@ -80,32 +77,59 @@
       <choice value="*">All Environments</choice>
       <default>*</default>
       <initialValue>*</initialValue>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Environments">
+          <set token="env_label"></set>
+        </condition>
+        <condition>
+          <set token="env_label">Environment: $label$</set>
+        </condition>
+      </change>
     </input>
-    <input type="checkbox" token="application">
+    <input type="dropdown" token="application">
       <label>Application</label>
-      <default>prod-sqs8,prod-api1,prod-app2,prod-app4,prod-sqs4,prod-sqs7</default>
-      <initialValue>prod-sqs8,prod-sqs7,prod-sqs4,prod-app4,prod-app2,prod-api1</initialValue>
+      <default>*</default>
+      <initialValue>*</initialValue>
       <fieldForLabel>application</fieldForLabel>
       <fieldForValue>application</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | dedup application | sort +application</query>
+        <query>index=overops metric=overops_events  service=$environment$ | dedup application | sort +application</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
-      <delimiter> , </delimiter>
+      <choice value="*">All Applications</choice>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Applications">
+          <set token="app_label"></set>
+        </condition>
+        <condition>
+          <set token="app_label">Application: $label$</set>
+        </condition>
+      </change>
     </input>
-    <input type="checkbox" token="server">
+    <input type="dropdown" token="server">
       <label>Server</label>
-      <default>ip-10-238-54-161,ip-10-233-123-230,ip-10-228-106-172,ip-10-225-180-121,ip-10-181-20-119,ip-10-168-83-132</default>
-      <initialValue>ip-10-168-83-132,ip-10-181-20-119,ip-10-225-180-121,ip-10-228-106-172,ip-10-233-123-230,ip-10-238-54-161</initialValue>
+      <default>*</default>
+      <initialValue>*</initialValue>
       <fieldForLabel>server</fieldForLabel>
       <fieldForValue>server</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | dedup server | sort +server</query>
+        <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application= $application$ | dedup server | sort +server</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
-      <delimiter> , </delimiter>
+      <choice value="*">All Servers</choice>
+      <!-- set condition based on the label defined by <choice> -->
+      <change>
+        <condition label="All Servers">
+          <set token="serv_label"></set>
+        </condition>
+        <condition>
+          <set token="serv_label">Server: $label$</set>
+        </condition>
+      </change>
     </input>
     <input type="checkbox" token="event_type">
       <label>Event Type</label>
@@ -155,7 +179,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y %H:%M:%S") | where firstseen_10 &gt;= n | stats dc(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y %H:%M:%S") | where firstseen_10 &gt;= n | stats dc(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -171,7 +195,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=uncaught_exception earliest=$time$  | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception earliest=$time$  | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -205,7 +229,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_error  earliest=$time$ | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error  earliest=$time$ | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -239,7 +263,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=http_error earliest=$time$ | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=http_error earliest=$time$ | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -273,7 +297,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=swallowed_exception earliest=$time$ | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception earliest=$time$ | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -307,7 +331,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_warning earliest=$time$ | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning earliest=$time$ | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -341,7 +365,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events service=$environment$ label=*resurfaced* earliest=$time$| stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events service=$environment$ application=$application$ server=$server$ label=*resurfaced* earliest=$time$| stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -375,7 +399,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=timer earliest=$time$ | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=timer earliest=$time$ | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -398,7 +422,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=* | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") | where firstseen_10 &gt;= n | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") | where firstseen_10 &gt;= n | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -414,7 +438,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=uncaught_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -447,7 +471,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_error earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -479,7 +503,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=http_error  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=http_error  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -511,7 +535,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=swallowed_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -537,14 +561,14 @@
         <option name="useColors">1</option>
         <option name="useThousandSeparators">1</option>
         <drilldown>
-          <link target="_blank">/app/overops/error_details?type=swallowed_exception&amp;title=Swallowed Exception&amp;resurfaced=*</link>
+          <link target="_blank">/app/overops/error_details?type=swallowed_exception&amp;title=Swallowed Exceptions&amp;resurfaced=*</link>
         </drilldown>
       </single>
     </panel>
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=log_warning earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -576,7 +600,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events label=*resurfaced* service=$environment$  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events label=*resurfaced* service=$environment$ application=$application$ server=$server$ earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -608,7 +632,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type=timer earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=timer earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -630,7 +654,7 @@
       <title>Events by Tier vs Throughput</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ infra!=null service=$environment$ event_type!=caught_exception event_type IN ($event_type$) application IN ($application$) server IN ($server$) labels=$resurfaced$ earliest=$time$ | timechart span=1h sum(value) as Times by infra | join _time [search index=overops metric=overops_entrypoints earliest=$time$ service=*  application IN (*) server IN (*) entrypoint_metrics=entry_point_total_calls | timechart span=$span$ sum(value) as Throughput]</query>
+          <query>index=overops metric=overops_events earliest=$time$ infra!=null service=$environment$ event_type!=caught_exception event_type IN ($event_type$) application=$application$ server=$server$ labels=$resurfaced$ earliest=$time$ | timechart span=1h sum(value) as Times by infra | join _time [search index=overops metric=overops_entrypoints earliest=$time$ service=$environment$  application=$application$ server=$server$ entrypoint_metrics=entry_point_total_calls | timechart span=$span$ sum(value) as Throughput]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -654,7 +678,7 @@
       <title>Events vs Predicted Volume</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application IN ($application$) server IN ($server$) event_type IN ($event_type$) labels=$resurfaced$ event_type!=caught_exception | timechart span=$span$ sum(value) as Times | predict Times future_timespan=5 as "Predicted Volume"</query>
+          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type IN ($event_type$) labels=$resurfaced$ event_type!=caught_exception | timechart span=$span$ sum(value) as Times | predict Times future_timespan=5 as "Predicted Volume"</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -770,7 +794,7 @@
       <title>Deployment View</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ earliest=-24h latest=now | rename value as today | stats sum(today) as Times distinct_count(eventid) as "Unique Events" distinct_count(application) as Applications distinct_count(server) as Servers by deployment | join deployment [search index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ event_type!=caught_exception event_type IN ($event_type$) earliest=-48h latest=-24h |rename value as previous | stats sum(previous) as Previous  by deployment ] |eval percent_change=(Times-Previous)/Previous *100 | rename deployment as Deployment | rename percent_change as "Δ% 24h" | Table Deployment, "Unique Events", Times, "Δ% 24h", Applications, Servers | sort -Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ earliest=-24h latest=now | rename value as today | stats sum(today) as Times distinct_count(eventid) as "Unique Events" distinct_count(application) as Applications distinct_count(server) as Servers by deployment | join deployment [search index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type!=caught_exception event_type IN ($event_type$) earliest=-48h latest=-24h |rename value as previous | stats sum(previous) as Previous  by deployment ] |eval percent_change=(Times-Previous)/Previous *100 | rename deployment as Deployment | rename percent_change as "Δ% 24h" | Table Deployment, "Unique Events", Times, "Δ% 24h", Applications, Servers | sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
