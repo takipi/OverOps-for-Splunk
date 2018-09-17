@@ -7,6 +7,7 @@ With real-time streaming of events & metrics from OverOps directly into Splunk, 
 ![alt text](screenshots/rt-app-state.png "Real-Time Application State Dashboard")
 
 ## Installation procedure for the Splunk app:
+Estimated effort: 5 minutes
 
 ###### The OverOps for Splunk application is compatible with OverOps v4.18 and higher. Use of any previous versions may omit some tokens and require modication to the Splunk application. Nonetheless, use of this application will provide a good head start into gaining value from the data of OverOps into Splunk.
 
