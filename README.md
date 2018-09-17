@@ -12,7 +12,7 @@ With real-time streaming of events & metrics from OverOps directly into Splunk, 
 
 ###### The OverOps for Splunk application is compatible with following versions of Splunk Enterprise: 7.0.0, 7.0.1, 7.0.2, 7.0.3, 7.0.4, 7.0.5, 7.1.0, 7.1.1, 7.1.2
 
-### Perform these tasks from within the OverOps user interface:
+### The OverOps Administrator will need to perform these tasks from within the OverOps user interface:
 
 1. Turn statsd on from publish metrics. (Settings -> Publish Metrics)
 
@@ -37,21 +37,37 @@ overops_custom,${serviceid},${application},${server},${deployment},${metric}
 ![alt text](screenshots/publish-metrics.png "Publish Metrics")
 
 
-### Perform these tasks from within Splunk:
+### The Splunk Administrator will need to perform these tasks from within Splunk:
 
-**Note this app creates a new events index within Splunk called _overops_. A new UDP data input is also created in Splunk on port 8125, _[udp://8125]_.**
 
+**Note this app utilizes a new events index within Splunk called _overops_. A new UDP data input is also required in Splunk, recommended on port 8125.**
 
 1. Save the Splunk overops app locally ( overops.spl )
 
 2. From the Splunk web application, go to Apps -> Manage Apps -> Install App from file, and choose the overops.spl file.
 
-3. Now in Splunk, you should see OverOps for Splunk app ( Apps -> OverOps for Splunk )
+3. Create New Index ( Settings -> Indexes -> New Index )
+   a. index name = overops
+   b. index data type = Events
 
-4. Drill-down to OverOps Root Cause Analysis: Drill-through links to the OverOps root cause analysis will need to be updated with administration access. The dashboards are Application Drill-down, Application Drill-down-drillthrough and Continuous Reliability. In each of these dashboards, there is a table visualization. 
+4. Create New Data Input ( Settings -> Data inputs -> UDP -> New Local UPD )
+   a. Choose UDP
+   b. Port 8125 (Recommended port. This port should be provided to the OverOps Administrator to publish metrics.)
+
+5. View the OverOps for Splunk app. ( Apps -> OverOps for Splunk )
+
+6. Edit Drill-down to OverOps Root Cause Analysis: Drill-through links to the OverOps root cause analysis will need to be updated with administration access. The dashboards are Event Details, Application Drill-down, Application Drill-down-drillthrough and Continuous Reliability. In each of these dashboards, there is a table visualization. 
 Edit dashboards -> More details -> Edit Drilldown -> Link to custom URL
 
-`https://app.overops.com/tinykey/$row.RootCause|n$` or `https://<on-prem-overops-server-here>/tinykey/$row.RootCause|n$`
+For SaaS or Hybrid model:
+```
+https://app.overops.com/tinykey/$row.RootCause|n$
+```
+or 
+For On-Premise model:
+```
+https://on-prem-overops-server-here/tinykey/$row.RootCause|n$
+```
 
 Please be aware that some visuals in the Real-Time Application State dashboard will take a couple days to populate as there are some day over day comparisons, hence the index will need to be filled with the appropriate data.
 
