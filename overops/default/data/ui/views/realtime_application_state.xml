@@ -422,7 +422,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") | where firstseen_10 &gt;= n | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ | eval firstseen_10=firstseen/1000 | eval n=relative_time(now(),"$time$") | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") | where firstseen_10 &gt;= n | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count| where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -438,7 +438,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count | where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -471,7 +471,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_error earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count | where event_count = 0]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -503,7 +503,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=http_error  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=http_error  earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count| where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -535,7 +535,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count| where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -568,7 +568,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=log_warning earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count|  where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -600,7 +600,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events label=*resurfaced* service=$environment$ application=$application$ server=$server$ earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events label=*resurfaced* service=$environment$ application=$application$ server=$server$ earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count| where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -632,7 +632,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=timer earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=timer earliest=$spark$ latest=now | timechart span=$trend$ sum(value) as Times | appendpipe [| stats count as event_count| where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
         </search>
@@ -660,9 +660,10 @@
         </search>
         <option name="charting.axisTitleX.visibility">collapsed</option>
         <option name="charting.axisY.abbreviation">auto</option>
-        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY.scale">log</option>
         <option name="charting.axisY2.abbreviation">auto</option>
         <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">inherit</option>
         <option name="charting.chart">line</option>
         <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.overlayFields">Throughput</option>
