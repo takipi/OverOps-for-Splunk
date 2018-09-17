@@ -57,8 +57,11 @@ overops_custom,${serviceid},${application},${server},${deployment},${metric}
    a. Choose _UDP_
    
    b. Port: _8125_ (Recommended port. This port should be provided to the OverOps Administrator to publish metrics.)
+   
    c. Source Type: _Select_ -> _Metrics_ -> _statsd_
+   
    d. App Context: _OverOps for Splunk(overops)_
+   
    e. Index: _overops_
 
 5. View the OverOps for Splunk app. ( Apps -> OverOps for Splunk )
