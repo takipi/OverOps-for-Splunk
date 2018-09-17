@@ -42,15 +42,17 @@ overops_custom,${serviceid},${application},${server},${deployment},${metric}
 
 **Note this app utilizes a new events index within Splunk called _overops_. A new UDP data input is also required in Splunk, recommended on port 8125.**
 
-1. Save the Splunk overops app locally ( overops.spl )
+1. Save the Splunk overops app locally ( overops-splunk-app.tar.gz )
 
 2. From the Splunk web application, go to Apps -> Manage Apps -> Install App from file, and choose the overops.spl file.
 
 3. Create New Index ( Settings -> Indexes -> New Index )
+  
    a. index name = overops
    b. index data type = Events
 
 4. Create New Data Input ( Settings -> Data inputs -> UDP -> New Local UPD )
+  
    a. Choose UDP
    b. Port 8125 (Recommended port. This port should be provided to the OverOps Administrator to publish metrics.)
 
