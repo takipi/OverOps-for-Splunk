@@ -44,7 +44,7 @@ overops_custom,${serviceid},${application},${server},${deployment},${metric}
 
 1. Save the Splunk overops app locally ( overops-splunk-app.tar.gz )
 
-2. From the Splunk web application, go to Apps -> Manage Apps -> Install App from file, and choose the overops.spl file.
+2. From the Splunk web application, go to Apps -> Manage Apps -> Install App from file, and choose the _overops-splunk-app.tar.gz_ file.
 
 3. Create New Index ( Settings -> Indexes -> New Index )
   
@@ -54,9 +54,12 @@ overops_custom,${serviceid},${application},${server},${deployment},${metric}
 
 4. Create New Data Input ( Settings -> Data inputs -> UDP -> New Local UPD )
   
-   a. Choose UDP
+   a. Choose _UDP_
    
-   b. Port 8125 (Recommended port. This port should be provided to the OverOps Administrator to publish metrics.)
+   b. Port: _8125_ (Recommended port. This port should be provided to the OverOps Administrator to publish metrics.)
+   c. Source Type: _Select_ -> _Metrics_ -> _statsd_
+   d. App Context: _OverOps for Splunk(overops)_
+   e. Index: _overops_
 
 5. View the OverOps for Splunk app. ( Apps -> OverOps for Splunk )
 
