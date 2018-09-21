@@ -67,7 +67,9 @@
       <fieldForLabel>service</fieldForLabel>
       <fieldForValue>service</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <query>index=overops metric=overops_events 
+| dedup service 
+| sort +service</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -83,7 +85,9 @@
       <fieldForLabel>application</fieldForLabel>
       <fieldForValue>application</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events service=$environment$ | dedup application | sort +application</query>
+        <query>index=overops metric=overops_events service=$environment$ 
+| dedup application 
+| sort +application</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -93,7 +97,9 @@
       <fieldForLabel>introducedby</fieldForLabel>
       <fieldForValue>introducedby</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events NOT labels=*Resolved* service=* introducedby!="version*" introducedby!="stage*" service=$environment$ application=$application$ | dedup introducedby | sort -introducedby</query>
+        <query>index=overops metric=overops_events  service=$environment$ introducedby!="version*" introducedby!="stage*" service=$environment$ application=$application$ 
+| dedup introducedby 
+| sort -introducedby</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -104,7 +110,8 @@
       <title>New Unique Errors Introduced by $build$</title>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ introducedby!="stage*" introducedby!="version*" introducedby=$build$ event_type!=caught_exception | stats distinct_count(eventid)</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ introducedby!="stage*" introducedby!="version*" introducedby=$build$ event_type!=caught_exception NOT labels=*Resolved*
+| stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -133,7 +140,9 @@
       <title>New Total Events Introduced by $build$</title>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ introducedby=$build$ event_type!=caught_exception | stats sum(value) | append [| stats count as event_count]</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ introducedby=$build$ event_type!=caught_exception NOT labels=*Resolved*
+| stats sum(value) 
+| append [| stats count as event_count]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -165,7 +174,13 @@
       <title>New Errors Introduced by Last 10 Deployments ( click deployment to see events )</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ event_type!=caught_exception | rename "introducedby" AS "introducedby" | search introducedby!="version*" | search introducedby!="stage*" | stats distinct_count(eventid) as "Event Count" sum(value) as Volume by introducedby  |tail 10 | sort +str(introducedby)</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ event_type!=caught_exception NOT labels=*Resolved*
+| rename "introducedby" AS "introducedby" 
+| search introducedby!="version*" 
+| search introducedby!="stage*" 
+| stats distinct_count(eventid) as "Event Count" sum(value) as Volume by introducedby  
+| tail 10 
+| sort +introducedby</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -211,8 +226,21 @@
     <panel>
       <title>Reliability over Time - Volume over Last 7 Days</title>
       <chart>
+        <search type="annotation">
+          <query>index=overops metric=overops_events earliest=-7d application=$application$ service=$environment$ | streamstats current=f last(deployment) as new_deploy last(_time) as time_of_change by application 
+          | rename deployment as old_deploy 
+          | where old_deploy!=new_deploy 
+          | convert ctime(time_of_change) as time_of_change  
+          | eval annotation_label = "New Deployment: ".tostring(new_deploy)." from ".tostring(old_deploy)
+          | eval annotation_color = "#0000ff"
+            </query>
+          <latest>now</latest>
+        </search>
         <search>
-          <query>index=overops metric=overops_events  NOT labels=*Resolved* service=$environment$ application=$application$ event_type != caught_exception event_type != timer | timechart sum(value) span=1d by event_type | union [search index=overops metric=overops_entrypoints service=$environment$ application=$application$  entrypoint_metrics=entry_point_total_calls | timechart span=1d sum(value) as Throughput]</query>
+          <query>index=overops metric=overops_events service=$environment$ application=$application$ event_type != caught_exception event_type != timer NOT labels=*Resolved*
+| timechart sum(value) span=1d by event_type 
+| union [search index=overops metric=overops_entrypoints service=$environment$ application=$application$  entrypoint_metrics=entry_point_total_calls 
+| timechart span=1d sum(value) as Throughput]</query>
           <earliest>-7d@h</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
@@ -260,7 +288,18 @@
       <table>
         <title>Click any event below to see root cause</title>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ introducedby IN ($build$) event_type!=caught_exception  |stats sum(value) as Times by eventid, event_type, class, method, eventname, link, entrypoint_class, entrypoint_method  |rename event_type as "Event Type" |rename eventname as Type |rename link as "RootCause" | strcat class "." method codelocation |rename codelocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" |rename eventid as "Event ID" | table "Event ID", "Event Type", "Code Location", Type, "RootCause", "Entry Point", Times | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ introducedby IN ($build$) event_type!=caught_exception NOT labels=*Resolved*
+| stats sum(value) as Times by eventid, event_type, class, method, eventname, link, entrypoint_class, entrypoint_method  
+| rename event_type as "Event Type" 
+| rename eventname as Type 
+| rename link as "RootCause" 
+| strcat class "." method codelocation 
+| rename codelocation as "Code Location" 
+| strcat entrypoint_class "." entrypoint_method entrypoint 
+| rename entrypoint as "Entry Point" 
+| rename eventid as "Event ID" 
+| table "Event ID", "Event Type", "Code Location", Type, "RootCause", "Entry Point", Times 
+| sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -270,6 +309,7 @@
         <option name="dataOverlayMode">none</option>
         <option name="drilldown">cell</option>
         <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">true</option>
         <option name="wrap">true</option>

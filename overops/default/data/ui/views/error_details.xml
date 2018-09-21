@@ -51,7 +51,9 @@
       <fieldForLabel>service</fieldForLabel>
       <fieldForValue>service</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events | dedup service | sort +service</query>
+        <query>index=overops metric=overops_events 
+| dedup service 
+| sort +service</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -75,7 +77,9 @@
       <fieldForLabel>application</fieldForLabel>
       <fieldForValue>application</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events  service=$environment$ | dedup application | sort +application</query>
+        <query>index=overops metric=overops_events  service=$environment$ 
+| dedup application 
+| sort +application</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -97,7 +101,9 @@
       <fieldForLabel>server</fieldForLabel>
       <fieldForValue>server</fieldForValue>
       <search>
-        <query>index=overops metric=overops_events NOT labels=*Resolved* service=$environment$ application= $application$ | dedup server | sort +server</query>
+        <query>index=overops metric=overops_events  service=$environment$ application= $application$ 
+| dedup server 
+| sort +server</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -117,8 +123,19 @@
     <panel>
       <title>$title$ $range_label$</title>
       <chart>
+        <search type="annotation">
+          <query>index=overops metric=overops_events earliest=$time$ application=$application$ server=$server$ service=$environment$ | streamstats current=f last(deployment) as new_deploy last(_time) as time_of_change by application 
+          | rename deployment as old_deploy 
+          | where old_deploy!=new_deploy 
+          | convert ctime(time_of_change) as time_of_change  
+          | eval annotation_label = "New Deployment: ".tostring(new_deploy)." from ".tostring(old_deploy). " Application: ".tostring(application)
+          | eval annotation_color = "#0000ff"
+            </query>
+          <latest>now</latest>
+        </search>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=$type$ $resurfaced$ | timechart span=$span$ sum(value) as Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=$type$ labels=$resurfaced$ NOT labels=*Resolved*
+| timechart span=$span$ sum(value) as Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -163,7 +180,16 @@
       <title>Click any event below to see root cause</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ NOT labels=*Resolved* service=$environment$ application=$application$ server=$server$ event_type=$type$ labels=$resurfaced$  | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method | strcat class "." method eventlocation |rename eventlocation as "Code Location" | strcat entrypoint_class "." entrypoint_method entrypoint |rename entrypoint as "Entry Point" | rename eventid as "Event ID" | rename link as "RootCause" | table "Event ID" "Code Location", "Entry Point", Times, "RootCause" | sort -Times</query>
+          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=$type$ labels=$resurfaced$ NOT labels=*Resolved*
+| stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method 
+| strcat class "." method eventlocation 
+| rename eventlocation as "Code Location" 
+| strcat entrypoint_class "." entrypoint_method entrypoint 
+| rename entrypoint as "Entry Point" 
+| rename eventid as "Event ID" 
+| rename link as "RootCause" 
+| table "Event ID" "Code Location", "Entry Point", Times, "RootCause" 
+| sort -Times</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>

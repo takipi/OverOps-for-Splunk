@@ -1,4 +1,4 @@
-verOps for Splunk Application
+OverOps for Splunk Application
 See the OverOps Splunk integration site for more information.
 
 With real-time streaming of events & metrics from OverOps directly into Splunk, SREs, DevOps and IT Ops can gain clarity of overall application health as visualized in Splunk Metric Dashboards through key performance indicators, such as the number of unique uncaught and swallowed exceptions, and errors that are new or have resurfaced. You can’t find those in log files, but now you can with OverOps data inside of Splunk!
