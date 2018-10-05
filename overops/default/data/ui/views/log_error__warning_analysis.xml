@@ -66,7 +66,7 @@
       <title>Top Log Errors</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
 | rename class as "Class" 
 | stats sum(value) as Times distinct_count(eventid) as count by Class 
 | sort -Class</query>
@@ -112,7 +112,7 @@
       <title>Top Log Warnings</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved*
 | rename class as Class 
 | stats sum(value) as Times distinct_count(eventid) as count by Class 
 | sort -Class</query>
@@ -159,7 +159,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
 | stats sum(value) as Times distinct_count(eventid) as count by class, method
 | strcat class "." method eventlocation 
 | rename eventlocation as "Code Location" 
@@ -188,7 +188,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops metric=overops_events NOT earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved*
+          <query>index=overops metric=overops_events NOT earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved*
 | stats sum(value) as Times distinct_count(eventid) as count by class, method
 | strcat class "." method eventlocation 
 | rename eventlocation as "Code Location" 

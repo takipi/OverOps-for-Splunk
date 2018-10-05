@@ -142,16 +142,6 @@
       <title>Events by Application vs Throughput</title>
       <chart>
         <title>$app_label$</title>
-        <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) NOT labels=*Resolved*
-| join application [search index=overops metric=overops_entrypoints earliest=$time$ service=* entrypoint_metrics=entry_point_total_calls  application=$application$ 
-| rename value as throughput ]
-| timechart span=$span$ sum(value) as Times sum(throughput) as Throughput 
-| eval Rate=((Times/Throughput) *100)</query>
-          <earliest>$earliest$</earliest>
-          <latest>$latest$</latest>
-          <sampleRatio>1</sampleRatio>
-        </search>
         <search type="annotation">
           <query>index=overops metric=overops_events earliest=$time$ application=$application$ service=$environment$ | streamstats current=f last(deployment) as new_deploy last(_time) as time_of_change by application 
           | rename deployment as old_deploy 
@@ -161,6 +151,16 @@
           | eval annotation_color = "#0000ff"
             </query>
           <latest>now</latest>
+        </search>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) NOT labels=*Resolved*
+| join application [search index=overops metric=overops_entrypoints earliest=$time$ latest=now service=$environment$ entrypoint_metrics=entry_point_total_calls  application=$application$ 
+| rename value as throughput ]
+| timechart span=$span$ sum(value) as Times sum(throughput) as Throughput 
+| eval Rate=((Times/Throughput) *100)</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -212,7 +212,7 @@
       <table depends="$showTable$">
         <title>Click any event below to see root cause</title>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ event_type IN (swallowed_exception, uncaught_exception, http_error, log_error) NOT labels=*Resolved*
 | rename application as Application  
 | stats sum(value) as Times by eventid, event_type, class, method, link, entrypoint_class, entrypoint_method 
 | rename eventid as "Event ID" 

@@ -137,7 +137,7 @@
         </condition>
       </change>
     </input>
-    <input type="checkbox" token="event_type">
+    <input type="dropdown" token="event_type">
       <label>Event Type</label>
       <fieldForLabel>event_type</fieldForLabel>
       <fieldForValue>event_type</fieldForValue>
@@ -148,7 +148,9 @@
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
-      <delimiter>, </delimiter>
+      <choice value="*">All Events</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
     </input>
     <input type="radio" token="resurfaced" searchWhenChanged="false">
       <label>Resurfaced?</label>
@@ -187,7 +189,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events service=$environment$ application=$application$ server=$server$ NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type!=caught_exception NOT labels=*Resolved*
 | eval firstseen_10=firstseen/1000 
 | eval n=relative_time(now(),"$time$") 
 | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y %H:%M:%S") 
@@ -208,7 +210,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception NOT labels=*Resolved*  
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=uncaught_exception NOT labels=*Resolved*  
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -243,7 +245,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_error NOT labels=*Resolved*
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -278,7 +280,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=http_error NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=http_error NOT labels=*Resolved*
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -313,7 +315,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=swallowed_exception NOT labels=*Resolved*
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -348,7 +350,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved* 
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=log_warning NOT labels=*Resolved* 
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -383,7 +385,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ label=*resurfaced* 
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ label=*resurfaced* 
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -418,7 +420,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type=timer NOT labels=*Resolved* 
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type=timer NOT labels=*Resolved* 
 | stats distinct_count(eventid)</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -442,7 +444,7 @@
     <panel>
       <single>
         <search>
-          <query>index=overops metric=overops_events service=$environment$ application=$application$ server=$server$ NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type!=caught_exception NOT labels=*Resolved*
 | eval firstseen_10=firstseen/1000 
 | eval n=relative_time(now(),"$time$") 
 | eval firstseen_date=strftime(firstseen_10,"%m/%d/%Y") 
@@ -457,6 +459,7 @@
         <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
         <option name="refresh.display">progressbar</option>
         <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">percent</option>
         <option name="underLabel">Times</option>
         <option name="useColors">1</option>
       </single>
@@ -691,8 +694,16 @@
   </row>
   <row>
     <panel>
-      <title>Events by Tier vs Throughput</title>
+      <title>Events by Tier vs Throughput ( click any infrastructure to see more )</title>
       <chart>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ latest=now infra!=null service=$environment$ event_type!=caught_exception event_type=$event_type$ application=$application$ server=$server$ labels=$resurfaced$ NOT labels=*Resolved*
+| timechart span=$span$ sum(value) as Times by infra 
+| join _time [search index=overops metric=overops_entrypoints earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ entrypoint_metrics=entry_point_total_calls 
+| timechart span=$span$ sum(value) as Throughput ]</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
         <search type="annotation">
           <query>index=overops metric=overops_events earliest=$time$ application=$application$ server=$server$ service=$environment$ | streamstats current=f last(deployment) as new_deploy last(_time) as time_of_change by application 
           | rename deployment as old_deploy 
@@ -702,34 +713,38 @@
           | eval annotation_color = "#0000ff"
             </query>
           <latest>now</latest>
-        </search>
-        <search>
-          <query>index=overops metric=overops_events earliest=$time$ infra!=null service=$environment$ event_type!=caught_exception event_type IN ($event_type$) application=$application$ server=$server$ labels=$resurfaced$ NOT labels=*Resolved*
-| timechart span=1h sum(value) as Times by infra 
-| join _time [search index=overops metric=overops_entrypoints earliest=$time$ service=$environment$  application=$application$ server=$server$ entrypoint_metrics=entry_point_total_calls 
-| timechart span=$span$ sum(value) as Throughput]</query>
-          <earliest>$earliest$</earliest>
-          <latest>$latest$</latest>
         </search>
         <option name="charting.axisTitleX.visibility">collapsed</option>
         <option name="charting.axisY.abbreviation">auto</option>
         <option name="charting.axisY.scale">log</option>
         <option name="charting.axisY2.abbreviation">auto</option>
         <option name="charting.axisY2.enabled">1</option>
+        <option name="charting.axisY2.scale">linear</option>
         <option name="charting.chart">line</option>
         <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.overlayFields">Throughput</option>
-        <option name="charting.drilldown">none</option>
+        <option name="charting.drilldown">all</option>
         <option name="charting.fieldDashStyles">{"Throughput":"dash"}</option>
         <option name="charting.legend.placement">bottom</option>
         <option name="height">378</option>
         <option name="refresh.display">progressbar</option>
         <option name="trellis.size">medium</option>
+        <drilldown>
+          <link target="_blank">/app/overops/infrastructure_drilldown?infra=$click.name2$&amp;form.infra=$click.name2$</link>
+        </drilldown>
       </chart>
     </panel>
     <panel>
       <title>Events vs Predicted Volume</title>
       <chart>
+        <search>
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type =$event_type$ labels=$resurfaced$ event_type!=caught_exception NOT labels=*Resolved*
+| timechart span=$span$ sum(value) as Times 
+| predict Times future_timespan=5 as "Predicted Volume"</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
         <search type="annotation">
           <query>index=overops metric=overops_events earliest=$time$ application=$application$ server=$server$ service=$environment$ | streamstats current=f last(deployment) as new_deploy last(_time) as time_of_change by application 
           | rename deployment as old_deploy 
@@ -739,14 +754,6 @@
           | eval annotation_color = "#0000ff"
             </query>
           <latest>now</latest>
-        </search>
-        <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type IN ($event_type$) labels=$resurfaced$ event_type!=caught_exception NOT labels=*Resolved*
-| timechart span=$span$ sum(value) as Times 
-| predict Times future_timespan=5 as "Predicted Volume"</query>
-          <earliest>$earliest$</earliest>
-          <latest>$latest$</latest>
-          <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -789,24 +796,25 @@
       <title>Application View ( click any application to see more )</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=-24h latest=now service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$  NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=-24h latest=now service=$environment$ event_type!=caught_exception event_type=$event_type$ labels=$resurfaced$  NOT labels=*Resolved*
 | rename value as today 
 | stats sum(today) as Times sparkline(sum(today),1h) as "24h Trend" distinct_count(eventid) as "Unique Events" by application 
-| join application [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ event_type!=caught_exception event_type IN ($event_type$) NOT labels=*Resolved*
+| join application [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ event_type!=caught_exception event_type=$event_type$ NOT labels=*Resolved*
 | rename value as previous 
 | stats sum(previous) as Previous  by application ] 
 | eval percent_change=(Times-Previous)/Previous *100 
 | rename application as Application 
 | rename percent_change as "Δ% 24h" 
 | table Application, "Unique Events", Times, "Δ% 24h", "24h Trend" 
-| sort -Times</query>
+| sort -Times
+| appendpipe [| stats count as event_count|  where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">10</option>
         <option name="dataOverlayMode">none</option>
-        <option name="drilldown">cell</option>
+        <option name="drilldown">row</option>
         <option name="percentagesRow">false</option>
         <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
@@ -827,6 +835,7 @@
           <option name="precision">1</option>
           <option name="unit">%</option>
         </format>
+        <fields>["Application","Unique Events","Times","Δ% 24h","24h Trend"]</fields>
         <drilldown>
           <link target="_blank">/app/overops/application_drilldowndrillthrough?application=$click.value$&amp;app_label=$click.value$</link>
         </drilldown>
@@ -836,17 +845,18 @@
       <title>Server View</title>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=-24h latest=now service=$environment$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=-24h latest=now service=$environment$ event_type!=caught_exception event_type=$event_type$ labels=$resurfaced$ NOT labels=*Resolved*
 | rename value as today 
 | stats sum(today) as Times sparkline(sum(today),1h) as "24h Trend" distinct_count(eventid) as "Unique Events" by server 
-| join server [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ event_type!=caught_exception event_type IN ($event_type$) NOT labels=*Resolved*
+| join server [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ event_type!=caught_exception event_type=$event_type$ NOT labels=*Resolved*
 | rename value as previous 
 | stats sum(previous) as Previous  by server ] 
 | eval percent_change=(Times-Previous)/Previous *100 
 | rename server as Server 
 | rename percent_change as "Δ% 24h" 
 | table Server, "Unique Events", Times, "Δ% 24h", "24h Trend" 
-| sort -Times</query>
+| sort -Times
+| appendpipe [| stats count as event_count|  where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -874,6 +884,7 @@
           <option name="precision">1</option>
           <option name="unit">%</option>
         </format>
+        <fields>["Server","Unique Events","Times","Δ% 24h","24h Trend"]</fields>
       </table>
     </panel>
     <panel>
@@ -883,23 +894,23 @@
           <query>index=overops metric=overops_events earliest=-24h latest=now service=$environment$ application=$application$ server=$server$ event_type!=caught_exception event_type IN ($event_type$) labels=$resurfaced$ NOT labels=*Resolved*
 | rename value as today 
 | stats sum(today) as Times distinct_count(eventid) as "Unique Events" distinct_count(application) as Applications distinct_count(server) as Servers by deployment 
-| join deployment [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ application=$application$ server=$server$ event_type!=caught_exception event_type IN ($event_type$) NOT labels=*Resolved*
+| join deployment [search index=overops metric=overops_events earliest=-48h latest=-24h service=$environment$ application=$application$ server=$server$ event_type!=caught_exception event_type=$event_type$ NOT labels=*Resolved*
 | rename value as previous 
 | stats sum(previous) as Previous  by deployment ] 
 | eval percent_change=(Times-Previous)/Previous *100 
 | rename deployment as Deployment 
 | rename percent_change as "Δ% 24h" 
 | table Deployment, "Unique Events", Times, "Δ% 24h", Applications, Servers 
-| sort -Times</query>
+| sort -Times
+| appendpipe [| stats count as event_count|  where event_count = 0 ]</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">10</option>
         <option name="dataOverlayMode">none</option>
-        <option name="drilldown">cell</option>
+        <option name="drilldown">row</option>
         <option name="percentagesRow">false</option>
-        <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
@@ -914,6 +925,7 @@
           <option name="precision">1</option>
           <option name="unit">%</option>
         </format>
+        <fields>["Deployment","Unique Events","Times","Δ% 24h","Applications","Servers"]</fields>
         <drilldown>
           <link target="_blank">/app/overops/continuous_reliability</link>
         </drilldown>

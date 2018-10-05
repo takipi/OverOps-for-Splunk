@@ -66,7 +66,7 @@
       <title>Top Exceptions</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
 | stats sum(value) as Times distinct_count(eventid) as Count by eventname 
 | rename eventname as Type 
 | sort -Type</query>
@@ -117,7 +117,7 @@
       <title>Top Entry Points (Most Errors)</title>
       <chart>
         <search>
-          <query>index=overops metric=overops_events  earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
 | strcat entrypoint_class "." entrypoint_method entrypoint 
 | stats sum(value) as Times distinct_count(eventid) as Count by entrypoint 
 | rename entrypoint as "Entry Point" 
@@ -170,7 +170,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops metric=overops_events earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type IN (swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
 | stats sum(value) as Times distinct_count(eventid) as count by eventname, class, method 
 | rename eventname as "Exception Type"  
 | strcat class "." method eventlocation 
@@ -201,7 +201,7 @@
     <panel>
       <table>
         <search>
-          <query>index=overops metric=overops_events  earliest=$time$ service=$environment$ application=$application$ server=$server$ event_type IN ( swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
+          <query>index=overops metric=overops_events earliest=$time$ latest=now service=$environment$ application=$application$ server=$server$ event_type IN ( swallowed_exception, uncaught_exception, http_error) NOT labels=*Resolved*
 | strcat entrypoint_class "." entrypoint_method entrypoint 
 | stats sum(value) as Times distinct_count(eventid) as count by entrypoint, class, method  
 | strcat class "." method eventlocation 
